@@ -1,0 +1,11 @@
+{
+  "name": "bcontext",
+  "version": "0.1.0",
+  "description": "Bcontext workspace integration: MCP server registration, agent conventions (blocks, concurrency, dependencies, cited retrieval), CLI-first guidance, and a daily-brief command.",
+  "author": {
+    "name": "Bcontext",
+    "email": "founders@bcontext.es"
+  },
+  "homepage": "https://bcontext.es/docs/cli",
+  "keywords": ["knowledge-graph", "context", "rag", "mcp", "agents"]
+}

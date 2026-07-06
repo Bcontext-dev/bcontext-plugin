@@ -1,0 +1,20 @@
+---
+description: Daily standup brief from the active Bcontext workspace — shipped, decisions, blockers, and newly unblocked work.
+argument-hint: "[since-ISO-timestamp, default 24h ago]"
+---
+
+Produce a daily brief for the active Bcontext workspace, since $ARGUMENTS (default: 24 hours ago).
+
+Prefer the CLI (`bx`, env `BCONTEXT_*`) if a shell is available; otherwise the `mcp__bcontext__*` tools.
+
+1. `bx changes --since <ts> --limit 200` — collect the raw activity.
+2. `bx unblocked --kind task` — what became ready to start.
+3. For anything ambiguous, `bx get <node-id>` the specific nodes (don't re-read the whole tree).
+
+Output (markdown, under 200 words):
+- **Shipped** — tasks/bugs that reached done, with `/n/<id>` refs.
+- **Decisions** — new or edited decision/adr nodes, one line each.
+- **Blockers** — tasks in blocked status or with undone blockers.
+- **Newly unblocked** — ready work, ordered by priority.
+
+Every item must carry its `/n/<node_id>` ref so the reader can jump in.

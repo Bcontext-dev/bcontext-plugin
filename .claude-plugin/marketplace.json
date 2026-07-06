@@ -1,0 +1,14 @@
+{
+  "name": "bcontext",
+  "owner": {
+    "name": "Bcontext",
+    "email": "founders@bcontext.es"
+  },
+  "plugins": [
+    {
+      "name": "bcontext",
+      "source": "./plugins/bcontext",
+      "description": "Work a Bcontext workspace like a native: MCP server, CLI-first conventions, cited retrieval, optimistic concurrency, and the /bcontext:brief standup command."
+    }
+  ]
+}
