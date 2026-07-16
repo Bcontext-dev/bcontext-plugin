@@ -1,6 +1,6 @@
 ---
 name: bcontext
-description: How to work a Bcontext workspace correctly — CLI-first surface choice, H2 block addressing, optimistic concurrency, typed dependencies, cited retrieval, and cheap re-sync. Use whenever reading from or writing to a Bcontext workspace (bcontext.es or self-hosted), via the bcontext/bx CLI or the mcp__bcontext__* tools.
+description: How to work a Bcontext workspace correctly — CLI-first surface choice, H2 block addressing, optimistic concurrency, typed dependencies, cited retrieval, authorized external capabilities, and cheap re-sync. Use whenever reading from or writing to a Bcontext workspace (bcontext.es or self-hosted), via the bcontext/bx CLI or the mcp__bcontext__* tools.
 ---
 
 # Working with Bcontext
@@ -14,6 +14,12 @@ Bcontext is a multi-writer knowledge graph: humans and other agents edit the sam
 **No shell (hosted client)?** Use the `mcp__bcontext__*` tools — identical contracts.
 
 Anything without a CLI subcommand: `bx mcp <tool> '<json-args>'` (also `bx mcp tools/list` to discover).
+
+## External capabilities are live grants
+
+Tools named `<provider>__<capability>__<tool>` execute in an external provider through Bcontext's gateway. `tools/list` is authoritative: it exposes only this principal's active grants, and a tool disappearing means its grant or capability was revoked. Bcontext re-authorizes every call, so never rely on a stale cached tool list.
+
+Treat these as open-world actions. Inspect the registered description/schema before irreversible calls, keep arguments minimal, and never retry an external action blindly. Retry only when the returned error explicitly says it is safe; Bcontext supplies idempotency only for providers whose registered contract supports it.
 
 ## Orient: ask first, browse second
 
