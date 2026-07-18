@@ -9,7 +9,7 @@ Prefer the CLI (`bx`, env `BCONTEXT_*`) if a shell is available; otherwise the `
 
 1. `bx changes --since <ts> --limit 200` — collect the raw activity.
 2. `bx unblocked --kind task` — what became ready to start.
-3. For anything ambiguous, `bx get <node-id>` the specific nodes (don't re-read the whole tree).
+3. For anything ambiguous, `bx get <node-id>` the specific nodes (don't re-read the whole workspace).
 
 Output (markdown, under 200 words):
 - **Shipped** — tasks/bugs that reached done, with `/n/<id>` refs.

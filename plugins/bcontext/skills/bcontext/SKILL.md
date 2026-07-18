@@ -48,6 +48,20 @@ Explicit scopes are strict by default: filtering happens before vector/keyword r
 - **Structure with H2**: every `##` heading becomes a stable addressable block (`/n/<id>#<slug-of-heading>`). Write H2s deliberately; cite blocks, not whole nodes. Creating a `decision`/`adr`/`meeting`/`bug` with no body pre-fills its standard skeleton — fill it, don't fight it.
 - **MCP shape gotcha**: `create_node` takes fields flat; `update_node` nests them inside `patch`.
 
+## Classify with tags; use parent only for meaning
+
+- Create only real knowledge nodes: `doc`, `task`, `decision`, `meeting`,
+  `bug`, `adr`, `entity`, or `skill`. Reusable workspace tags provide
+  aboutness and replace single-purpose containers. A node can carry several
+  tags.
+- Call `list_tags` before writes, then pass stable ids as `tag_ids` to
+  `create_node` or `update_node`. Updating `tag_ids` replaces the complete
+  assignment set. Tags never become nodes or embeddings and never grant
+  permissions.
+- `parent_id` is optional semantic hierarchy between real nodes only, such as
+  epic/subtask or document/part. Do not use it for placement. Most nodes can
+  stay at root and be discovered through tags, views, search, and graph links.
+
 ## Dependencies are edges, not prose
 
 Never write "depends on X" in markdown. Instead:
@@ -56,7 +70,7 @@ Never write "depends on X" in markdown. Instead:
 bx link <task-id> <blocker-id> --relation blocked_by    # task waits on blocker
 ```
 
-Relations: `blocked_by`, `references`, `caused_by`, `relates_to`. Cycles are rejected (you'll get the offending path); `blocked_by` to something that can never be done (folder/decision) is rejected — use `references`. `bx get` on a task then reports live blocker status, and completing a blocker instantly surfaces dependents in `bx unblocked`.
+Relations: `blocked_by`, `references`, `caused_by`, `relates_to`. Cycles are rejected (you'll get the offending path); use `blocked_by` only when the target is actionable work that can reach done, and use `references` for knowledge such as decisions. `bx get` on a task then reports live blocker status, and completing a blocker instantly surfaces dependents in `bx unblocked`.
 
 ## Long sessions: re-sync, don't re-read
 
@@ -64,7 +78,7 @@ Relations: `blocked_by`, `references`, `caused_by`, `relates_to`. Cycles are rej
 
 ## Misc contracts worth knowing
 
-- New content is searchable after ~15s (async embedding) — `get`/`tree` see it immediately.
-- Deletes cascade and echo their blast radius (`deleted_count`/`deleted_ids`); attachments die with their node.
+- New content is searchable after ~15s (async embedding) — direct `get` and workspace reads see it immediately.
+- Before deleting, inspect the exact node, semantic children, references, and attachments; deletion is irreversible.
 - `bx attach <node-id> <file.png>` for screenshots (png/jpeg/webp/gif ≤ 4 MB); embed the returned URL as markdown.
 - Errors are self-correcting by design: read them — they name the offending key, list valid options, or include the recovery recipe.

@@ -1,6 +1,6 @@
 # Bcontext — Claude Code plugin marketplace
 
-Claude Code integration for [Bcontext](https://bcontext.es): registers the MCP server, installs the agent-conventions skill (block refs, optimistic concurrency, typed dependencies, cited retrieval, CLI-first surface choice), and adds `/bcontext:brief`.
+Claude Code integration for [Bcontext](https://bcontext.es): registers the MCP server, installs the agent-conventions skill (reusable tags, semantic hierarchy, block refs, optimistic concurrency, typed dependencies, cited retrieval, CLI-first surface choice), and adds `/bcontext:brief`.
 
 ## Install
 
