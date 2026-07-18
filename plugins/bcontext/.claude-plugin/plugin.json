@@ -1,6 +1,6 @@
 {
   "name": "bcontext",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Bcontext workspace integration: MCP server registration, agent conventions (tags, semantic hierarchy, blocks, concurrency, dependencies, cited retrieval), CLI-first guidance, and a daily-brief command.",
   "author": {
     "name": "Bcontext",
