@@ -20,7 +20,7 @@ export BCONTEXT_WORKSPACE="my-workspace"   # only needed for user-scoped tokens
 ## What's inside
 
 - `.mcp.json` — the `bcontext` MCP server (streamable HTTP, bearer from `$BCONTEXT_TOKEN`).
-- `skills/bcontext/` — the behavior pack: when to use CLI vs MCP, the 409 rebase loop, block refs, `blocked_by` edges, `list_changes` re-sync.
+- `skills/bcontext/` — the behavior pack: surface choice, scoped RAG, the 409 rebase loop, block refs, `blocked_by` edges, and `list_changes` re-sync.
 - `commands/brief.md` — `/bcontext:brief [since]`: standup brief with `/n/<id>` refs.
 
 The CLI (`npx @bcontext/cli`, binaries `bcontext` and `bx`) is recommended alongside: same token, ~0 standing context tokens per call. See `/docs/cli`.

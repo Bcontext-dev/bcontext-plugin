@@ -28,6 +28,19 @@ Treat these as open-world actions. Inspect the registered description/schema bef
 3. `bx get <id>` — full envelope: content, `inbound_links` (who references this — discovery you can't search for), `outbound_links`, `dependencies` (blocker status), `attachments`.
 4. `bx unblocked` — the "what can I start now" query.
 
+## Choose retrieval scope explicitly
+
+`search_nodes` and `ask_rag` default to the complete workspace. Keep that default for broad orientation. When the question is intentionally local, pass the versioned `scope` contract (schema version 1): `view`, `tags` (`tags_any` / `tags_all`), `selection`, or `neighborhood`. CLI equivalents:
+
+```
+bx search "launch risk" --view <view-id>
+bx ask "what changed?" --tags-any product,tech
+bx search "impact" --select <id,id>
+bx ask "nearby decisions" --near <node-id> --depth 1
+```
+
+Explicit scopes are strict by default: filtering happens before vector/keyword retrieval. `--broad` allows graph expansion outside the original set and every such neighbor is marked `outside_scope`. `--scope auto` (or `--auto`) accepts mixed hints, boosts their candidate lanes, and always retains a visible workspace/global lane; never describe auto as a permission boundary. Results report scope type, size, workspace size, lane boosts, and whether broad expansion occurred. Tags classify knowledge; they are never ACLs, never separate indexes, and tag edits do not require re-embedding.
+
 ## Write safely (multi-writer rules)
 
 - **Guard every content edit**: read the node, hold its `updated_at`, pass it back — `bx update <id> --md - --if-updated-at <ts>` (MCP: `update_node({ id, if_updated_at, patch })`). A **409** means another session wrote first: re-fetch, rebase your change on top, retry with the new timestamp. Never retry a 409 blindly and never omit the guard on content_md.
