@@ -8,7 +8,7 @@
     {
       "name": "bcontext",
       "source": "./plugins/bcontext",
-      "description": "Work a Bcontext workspace like a native: MCP server, CLI-first conventions, cited retrieval, optimistic concurrency, and the /bcontext:brief standup command."
+      "description": "Work a Bcontext workspace like a native: MCP server, reusable tags, semantic hierarchy, CLI-first conventions, cited retrieval, optimistic concurrency, and the /bcontext:brief standup command."
     }
   ]
 }
