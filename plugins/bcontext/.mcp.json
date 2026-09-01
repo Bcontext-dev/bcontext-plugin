@@ -2,7 +2,7 @@
   "mcpServers": {
     "bcontext": {
       "type": "http",
-      "url": "${BCONTEXT_URL:-https://bcontext.es}/mcp",
+      "url": "${BCONTEXT_URL:-https://app.bcontext.dev}/mcp",
       "headers": {
         "Authorization": "Bearer ${BCONTEXT_TOKEN}",
         "X-Bcontext-Workspace": "${BCONTEXT_WORKSPACE:-}"
