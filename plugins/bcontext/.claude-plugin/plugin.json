@@ -6,6 +6,6 @@
     "name": "Bcontext",
     "email": "founders@bcontext.es"
   },
-  "homepage": "https://bcontext.es/docs/cli",
+  "homepage": "https://bcontext.dev",
   "keywords": ["knowledge-graph", "context", "rag", "mcp", "agents"]
 }
