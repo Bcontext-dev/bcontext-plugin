@@ -1,11 +1,17 @@
 {
   "name": "bcontext",
-  "version": "0.1.1",
-  "description": "Bcontext workspace integration: MCP server registration, agent conventions (tags, semantic hierarchy, blocks, concurrency, dependencies, cited retrieval), CLI-first guidance, and a daily-brief command.",
+  "version": "0.2.0",
+  "description": "Bcontext workspace integration: MCP server registration, the agent skill for the consolidated 17-tool surface (blocks, if_updated_at, typed dependencies, cited retrieval, working alongside other agents), and a daily-brief command.",
   "author": {
     "name": "Bcontext",
     "email": "founders@bcontext.es"
   },
   "homepage": "https://bcontext.dev",
-  "keywords": ["knowledge-graph", "context", "rag", "mcp", "agents"]
+  "keywords": [
+    "knowledge-graph",
+    "context",
+    "rag",
+    "mcp",
+    "agents"
+  ]
 }
