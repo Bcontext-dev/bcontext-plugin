@@ -8,8 +8,8 @@ Produce a daily brief for the active Bcontext workspace, since $ARGUMENTS (defau
 Use the `mcp__bcontext__*` tools.
 
 1. `list_changes({ since: "<ts>", limit: 200 })` — collect the raw activity.
-2. `list_nodes({ kind: "task", unblocked: true })` — what became ready to start.
-3. For anything ambiguous, `get_node({ id })` the specific nodes (don't re-read the whole workspace).
+2. `nodes({ op: "list", kind: "task", unblocked: true })` — what became ready to start.
+3. For anything ambiguous, `nodes({ op: "get", id })` the specific nodes (don't re-read the whole workspace).
 
 Output (markdown, under 200 words):
 - **Shipped** — tasks/bugs that reached done, with `/n/<id>` refs.

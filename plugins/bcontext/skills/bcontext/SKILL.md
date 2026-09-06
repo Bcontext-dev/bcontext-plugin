@@ -1,82 +1,157 @@
 ---
 name: bcontext
-description: How to work a Bcontext workspace correctly — H2 block addressing, optimistic concurrency, typed dependencies, cited retrieval, explicit retrieval scope, authorized external capabilities, and cheap re-sync. Use whenever reading from or writing to a Bcontext workspace (bcontext.dev or self-hosted) via the mcp__bcontext__* tools.
+description: How to work a Bcontext workspace as an agent — the 17-tool surface (nodes/nodes_write, tags/tags_write, views/views_write, links_write, ingest/ingest_write, skills/skills_run, admin/admin_write, ask_rag, list_changes, list_workspaces, ping), H2 blocks, the if_updated_at rule, typed dependencies, cited retrieval, working alongside other agents, and what to write down. Use whenever reading from or writing to a Bcontext workspace (bcontext.dev or self-hosted) via the mcp__bcontext__* tools.
 ---
 
 # Working with Bcontext
 
-Bcontext is a multi-writer knowledge graph: humans and other agents edit the same workspace while you work. Every convention below exists to keep concurrent sessions from destroying each other's work and to keep every claim verifiable.
+Bcontext is the shared memory of a team: people and other agents read and
+write the same workspace while you work, and nothing you do not write down
+exists for them. Everything below was learned by agents doing a week of real
+work through this surface, and it is ordered by how much it saved them.
+
+## Start here, in this order
+
+1. **Read the server's `instructions`** from `initialize`. They are short,
+   accurate for the build you are talking to, and they are the only manual.
+2. **`list_workspaces`** — which workspaces this token reaches. A workspace
+   token is bound to one; a user token picks one per call with
+   `X-Bcontext-Workspace` (or `?workspace=`).
+3. **`list_changes({ since })`** — what happened since you last looked. Keep
+   the newest `ts` as your next `since`. This is how you catch up; do not
+   re-read the tree.
+4. **`nodes({ op: "list", kind: "task", unblocked: true })`** — what can be
+   started now. Tasks that look independent usually are not; the unblocked set
+   is the truth, and finishing one moves the frontier for everyone.
+5. **`tags({})`** before you assign any `tag_ids`. There is no get-or-create.
+6. **`ask_rag({ query })`** for "what do we already know about X" — read
+   `scope.keyword_fallback` in the answer: `true` means no embeddings were
+   used and ranking is coarse, so cross-check with `nodes(op=list)` before
+   concluding something is not there.
 
 ## The surface
 
-One surface: the `mcp__bcontext__*` tools, served over Streamable HTTP at `<BCONTEXT_URL>/mcp`. Authenticate with a workspace-scoped bearer token, or let the client run OAuth discovery against `/.well-known/oauth-protected-resource`. The token carries the workspace scope — it decides where writes land. `list_workspaces` shows what the current token can reach.
+Reads never mutate; `*_write` tools do. Pick the operation with `op`:
 
-A partial REST surface (`/api/agents/context`, `/api/agents/write`) exists for callers that cannot speak MCP. It is not at parity with the tools; prefer MCP.
+| Read | Write | What it is |
+|---|---|---|
+| `nodes` (get · list · search) | `nodes_write` (create · update · delete · set_node_tags · toggle_checklist_item · attach_file) | the knowledge itself |
+| `tags` (list) | `tags_write` (create · rename · merge · delete · link · unlink) | the taxonomy — needs the `tags:*` verbs, which an admin grants |
+| `views` (list · get · resolve · query) | `views_write` (create · duplicate · update · delete) | saved query lenses |
+| — | `links_write` (link · unlink) | typed edges between nodes |
+| `ingest` | `ingest_write` | connector candidates awaiting review |
+| `skills` | `skills_run` | prompt templates the server can execute |
+| `admin` (access · preview · held_invitations) | `admin_write` (grant · revoke · invite · release_invite) | who can reach what — needs the `admin` verb |
+| `ask_rag`, `list_changes`, `list_workspaces`, `ping` | | |
 
-## External capabilities are live grants
+`tools/list` is authoritative and per-principal: a tool you cannot use is not
+shown. Tools named `<provider>__<capability>__<tool>` run in an external
+provider through Bcontext's gateway, re-authorised on every call; treat them
+as open-world actions and never retry one unless the error says to.
 
-Tools named `<provider>__<capability>__<tool>` execute in an external provider through Bcontext's gateway. `tools/list` is authoritative: it exposes only this principal's active grants, and a tool disappearing means its grant or capability was revoked. Bcontext re-authorizes every call, so never rely on a stale cached tool list.
+**Learn the schemas from the errors.** Every write tool is a discriminated
+union on `op`; calling `nodes_write({ op: "create" })` with nothing else
+returns the required fields and the valid enum values (`kind`, `priority`,
+`status`). Four cheap failed calls up front beat guessing. Two shapes to
+remember: `create` takes fields flat; `update` nests them under `patch`.
 
-Treat these as open-world actions. Inspect the registered description/schema before irreversible calls, keep arguments minimal, and never retry an external action blindly. Retry only when the returned error explicitly says it is safe; Bcontext supplies idempotency only for providers whose registered contract supports it.
+## Write so that others can read
 
-## Orient: ask first, browse second
+- **Structure every body with `##` headings.** Each H2 is an addressable block
+  (`/n/<id>#<slug>`) other agents can cite and extend. A body without H2s is a
+  wall nobody can point into.
+- **Write the reasoning into the node**, not just the outcome. The most useful
+  nodes a teammate will read are the ones with `## Why` or `## Status`
+  explaining a judgment call, who made it and whether it was escalated. A
+  decision you took alone is a `decision` node with `## Question / Decision /
+  Consequences / Status`; a reviewer will extend that node rather than open a
+  disconnected one.
+- **Prose mentions are not links.** "See the decision below" is invisible to
+  the graph. `links_write({ op: "link", from_id, to_id, relation:
+  "references" })` right after creating related nodes — one call per edge —
+  is what makes `nodes(op=get)` show the relationship and what makes
+  `unblocked` correct.
+- **Dependencies are edges, never text.** `blocked_by` from a task to what it
+  waits on. The target must be something that can reach `done` — a task or
+  bug, never a decision or doc (the server refuses, because it could never
+  unblock). A task blocked on a decision `references` it and says so in
+  `## Status`.
+- **An unplanned blocker** is a new task describing the missing prerequisite,
+  `blocked_task --blocked_by--> new_task`, and one line in the blocked task's
+  body pointing at it. That keeps everyone's `unblocked` list honest.
+- **A question for a specific teammate**: there is no mention or assignment
+  primitive yet. The convention that worked: an open `decision` node with a
+  `## Question` heading, the options named, `## Status: Open`, tagged like
+  everything else. Say who you need an answer from. Nobody is notified; they
+  will see it on their next `list_changes`.
 
-1. `ask_rag({ question })` — synthesized answer where **every claim carries an inline [N] citation**; sources come back as `/n/<node_id>#<block_id>` refs. Follow a ref with `get_node` to verify before acting on it. It refuses to answer beyond the corpus — trust that. Pass `answer: false` for retrieval only (cheaper, no model call, same hits).
-2. `search_nodes({ query })` — one hit per node, matched H2 blocks nested, each with a paste-ready `ref`.
-3. `get_node({ id })` — full envelope: content, `inbound_links` (who references this — discovery you can't search for), `outbound_links`, `dependencies` (blocker status), `attachments`.
-4. `list_nodes({ kind: "task", unblocked: true })` — the "what can I start now" query.
+## Write safely — the rule that bit a real agent
 
-## Choose retrieval scope explicitly
+Patching `content_md` **requires** `if_updated_at`: read the node, take its
+`updated_at`, pass it back. The server refuses a body rewrite without it and
+tells you the current value. A **409** means someone wrote in between —
+re-fetch, **merge** your change onto the current body (the other write may
+have added a whole section you do not have), retry with the new timestamp.
 
-`search_nodes` and `ask_rag` default to the complete workspace. Keep that default for broad orientation. When the question is intentionally local, pass the versioned `scope` contract (schema version 1): `view`, `tags` (`tags_any` / `tags_all`), `selection`, or `neighborhood`:
+Why it is mandatory: a builder agent forgot it once and silently replaced a
+reviewer's notes and a planner's sign-off that had landed on the same node
+minutes earlier. The only trace was an unfamiliar `previous_block_ids` in the
+response; the text came back from `list_changes({ node_id })`'s
+before-snapshots. Metadata patches (`title`, `status`, `tag_ids`) touch no
+prose and need no timestamp. To flip one checkbox use
+`nodes_write({ op: "toggle_checklist_item" })` — one call, no
+read-modify-write.
+
+## Views are for the team
+
+`views_write({ op: "create" })` defaults to `visibility: "workspace"`. The view
+`query` is a versioned object (`schema_version: 1`, `kinds`, `statuses`,
+`tags_any`/`tags_all`, `dates`, `source`, `actor`…) — the same contract
+`ask_rag`'s `scope` and `views(op=query)` use, and **not** the same field
+names as `nodes(op=list)` (`kinds` vs `kind`). Today the view query cannot
+express `unblocked`; a view of "what can start now" is an approximation
+(`statuses: ["todo"]`) — say so in the view's `description`, and point at
+`nodes(op=list, unblocked: true)` for the real answer.
+
+## Retrieval scope, explicitly
+
+`nodes(op=search)` and `ask_rag` default to the whole workspace. When the
+question is local, pass `scope` as an object:
 
 ```json
-{ "query": "launch risk",     "scope": { "type": "view", "view_id": "<view-id>" } }
-{ "question": "what changed?", "scope": { "type": "tags", "tags_any": ["product", "tech"] } }
-{ "query": "impact",           "scope": { "type": "selection", "node_ids": ["<id>", "<id>"] } }
-{ "question": "nearby decisions", "scope": { "type": "neighborhood", "node_id": "<id>", "depth": 1 } }
+{ "schema_version": 1, "type": "view", "view_id": "<id>" }
+{ "schema_version": 1, "type": "tags", "tags_any": ["billing", "vat"] }
+{ "schema_version": 1, "type": "selection", "node_ids": ["<id>", "<id>"] }
+{ "schema_version": 1, "type": "neighborhood", "node_id": "<id>", "depth": 1 }
 ```
 
-Explicit scopes are strict by default: filtering happens before vector/keyword retrieval. `broad: true` allows graph expansion outside the original set and every such neighbor is marked `outside_scope`. `{ "type": "auto" }` accepts mixed hints, boosts their candidate lanes, and always retains a visible workspace/global lane; never describe auto as a permission boundary. Results report scope type, size, workspace size, lane boosts, and whether broad expansion occurred. Tags classify knowledge; they are never ACLs, never separate indexes, and tag edits do not require re-embedding.
+Scopes filter before retrieval; `broad: true` lets graph expansion reach
+outside the set and marks those hits `outside_scope`. `auto` always keeps a
+visible workspace lane — never describe it as a permission boundary. Every
+hit carries a paste-ready `ref` (`/n/<id>#<block>`); follow it with
+`nodes(op=get)` before acting on a claim. New content is searchable after
+~15 s (async embedding); direct reads see it at once.
 
-## Write safely (multi-writer rules)
+## Who did what
 
-- **Guard every content edit**: read the node, hold its `updated_at`, pass it back — `update_node({ id, if_updated_at, patch })`. A **409** means another session wrote first: re-fetch, rebase your change on top, retry with the new timestamp. Never retry a 409 blindly and never omit the guard on content_md.
-- **Never rewrite a body to flip a checkbox**: `toggle_checklist_item({ node_id, index, block_id? })` flips one `- [ ]` atomically. A bad index returns the item inventory — self-correct from it.
-- **Structure with H2**: every `##` heading becomes a stable addressable block (`/n/<id>#<slug-of-heading>`). Write H2s deliberately; cite blocks, not whole nodes. Creating a `decision`/`adr`/`meeting`/`bug` with no body pre-fills its standard skeleton — fill it, don't fight it.
-- **Shape gotcha**: `create_node` takes fields flat; `update_node` nests them inside `patch`.
+`list_changes` gives millisecond timestamps, before/after snapshots, and an
+`actor_label` — today a hash of the principal, not a name, so two agents
+starting together are told apart by the shape of what they wrote until a
+second id appears. Write your role and intent into `## Status` sections; it
+is what the next reader will use.
 
-## Classify with tags; use parent only for meaning
+## What to leave out
 
-- Create only real knowledge nodes: `doc`, `task`, `decision`, `meeting`,
-  `bug`, `adr`, `entity`, or `skill`. Reusable workspace tags provide
-  aboutness and replace single-purpose containers. A node can carry several
-  tags.
-- Call `list_tags` before writes, then pass stable ids as `tag_ids` to
-  `create_node` or `update_node`. Updating `tag_ids` replaces the complete
-  assignment set. Tags never become nodes or embeddings and never grant
-  permissions.
-- `parent_id` is optional semantic hierarchy between real nodes only, such as
-  epic/subtask or document/part. Do not use it for placement. Most nodes can
-  stay at root and be discovered through tags, views, search, and graph links.
+Raw JSON you paged through to reconstruct a timeline, and observations about
+the tool itself ("I made a concurrency mistake"), do not belong in the
+workspace: they are process, not the team's knowledge. Put them in your
+report, not in a node.
 
-## Dependencies are edges, not prose
+## Misc contracts
 
-Never write "depends on X" in markdown. Instead:
-
-```json
-{ "from_id": "<task-id>", "to_id": "<blocker-id>", "relation": "blocked_by" }
-```
-
-Relations: `blocked_by`, `references`, `caused_by`, `relates_to`. Cycles are rejected (you'll get the offending path); use `blocked_by` only when the target is actionable work that can reach done, and use `references` for knowledge such as decisions. `get_node` on a task then reports live blocker status, and completing a blocker instantly surfaces dependents in `list_nodes({ unblocked: true })`.
-
-## Long sessions: re-sync, don't re-read
-
-`list_changes({ since })` returns everything that changed since your last sync (create/update/rename/move/delete, with actor kind). Pass the newest `ts` back as the next `since`. Filter one node's history with `list_changes({ node_id })`.
-
-## Misc contracts worth knowing
-
-- New content is searchable after ~15s (async embedding) — direct `get_node` and workspace reads see it immediately.
-- Before deleting, inspect the exact node, semantic children, references, and attachments; deletion is irreversible.
-- `attach_file` for screenshots (png/jpeg/webp/gif ≤ 4 MB); embed the returned URL as markdown.
-- Errors are self-correcting by design: read them — they name the offending key, list valid options, or include the recovery recipe.
+- Deletion is irreversible and cascades to descendants; inspect
+  `nodes(op=get)` first.
+- `nodes_write({ op: "attach_file" })` for screenshots (png/jpeg/webp/gif
+  ≤ 4 MB); embed the returned URL as markdown.
+- Errors are written to be read: they name the offending key, list the valid
+  options, or carry the recovery recipe. Read them before retrying.
