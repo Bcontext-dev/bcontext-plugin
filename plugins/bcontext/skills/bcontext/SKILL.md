@@ -1,6 +1,6 @@
 ---
 name: bcontext
-description: How to work a Bcontext workspace as an agent — the 19-tool surface (nodes/nodes_write, subtasks/subtasks_write, tags/tags_write, views/views_write, links_write, ingest/ingest_write, skills/skills_run, admin/admin_write, ask_rag, list_changes, list_workspaces, ping), H2 blocks, subtasks inside a task, the if_updated_at rule, typed dependencies, cited retrieval, working alongside other agents, and what to write down. Use whenever reading from or writing to a Bcontext workspace (bcontext.dev or self-hosted) via the mcp__bcontext__* tools.
+description: How to work a Bcontext workspace as an agent — the 24-tool surface (brief, nodes/nodes_write, subtasks/subtasks_write, tags/tags_write, views/views_write, links_write, ingest/ingest_write, skills/skills_write/skills_run, capabilities/capabilities_write, admin/admin_write, ask_nexo, ask_rag, list_changes, list_workspaces, ping), H2 blocks, subtasks inside a task, the if_updated_at rule, typed dependencies, cited retrieval, working alongside other agents, and what to write down. Use whenever reading from or writing to a Bcontext workspace (bcontext.dev or self-hosted) via the mcp__bcontext__* tools.
 ---
 
 # Working with Bcontext
@@ -17,17 +17,21 @@ work through this surface, and it is ordered by how much it saved them.
 2. **`list_workspaces`** — which workspaces this token reaches. A workspace
    token is bound to one; a user token picks one per call with
    `X-Bcontext-Workspace` (or `?workspace=`).
-3. **`list_changes({ since })`** — what happened since you last looked. Keep
-   the newest `ts` as your next `since`. This is how you catch up; do not
-   re-read the tree.
-4. **`nodes({ op: "list", kind: "task", unblocked: true })`** — what can be
-   started now. Tasks that look independent usually are not; the unblocked set
-   is the truth, and finishing one moves the frontier for everyone.
-5. **`tags({})`** before you assign any `tag_ids`. There is no get-or-create.
-6. **`ask_rag({ query })`** for "what do we already know about X" — read
-   `scope.keyword_fallback` in the answer: `true` means no embeddings were
-   used and ranking is coarse, so cross-check with `nodes(op=list)` before
-   concluding something is not there.
+3. **`brief({})`** — one read-only call: counts, the unblocked queue by
+   priority, open decisions, what is assigned to you, what changed since your
+   previous brief (remembered per token) and the workspace's views. Start
+   here; it replaces the first four or five calls of a cold session.
+4. **`list_changes({ since })`** when you need the detail of what happened.
+   Keep the newest `ts` as your next `since`; do not re-read the tree.
+5. **`nodes({ op: "list", kind: "task", unblocked: true })`** — what can be
+   started now (the same rule a saved view with `unblocked: true` applies).
+   Archived nodes stay out unless you ask for them.
+6. **`tags({})`** before you assign any `tag_ids`. There is no get-or-create.
+7. **`ask_nexo({ question })`** for "what do we already know about X": a cited
+   answer with confidence, freshness (stale / superseded), open conflicts,
+   knowledge gaps and suggested actions; `mode: "auto"` goes deep on why /
+   history questions. `ask_rag` is the raw retrieval primitive underneath —
+   read `scope.keyword_fallback`: `true` means ranking is coarse.
 
 ## The surface
 
@@ -35,15 +39,17 @@ Reads never mutate; `*_write` tools do. Pick the operation with `op`:
 
 | Read | Write | What it is |
 |---|---|---|
-| `nodes` (get · list · search) | `nodes_write` (create · update · delete · set_node_tags · toggle_checklist_item · attach_file) | the knowledge itself |
+| `brief` | — | the session opener: what is going on, what is yours, what changed |
+| `nodes` (get · list · search) | `nodes_write` (create · update · append · replace_block · delete · set_node_tags · toggle_checklist_item · attach_file) | the knowledge itself |
 | `subtasks` (list · get) | `subtasks_write` (add · update · delete · toggle · reorder) | the steps inside one task, edited by id |
 | `tags` (list) | `tags_write` (create · rename · merge · delete · link · unlink) | the taxonomy — needs the `tags:*` verbs, which an admin grants |
 | `views` (list · get · resolve · query) | `views_write` (create · duplicate · update · delete) | saved query lenses |
 | — | `links_write` (link · unlink) | typed edges between nodes |
 | `ingest` | `ingest_write` | connector candidates awaiting review |
-| `skills` | `skills_run` | prompt templates the server can execute |
+| `skills` (list · get) | `skills_write` (import) · `skills_run` | skills as YOUR instructions (get renders the prompt, scopes and tools); run is for model-less automations |
+| `capabilities` (list · discover · status) | `capabilities_write` (connect · disconnect · grant · revoke) | other MCPs and external tools behind the gateway — admin verb |
 | `admin` (access · preview · held_invitations) | `admin_write` (grant · revoke · invite · release_invite) | who can reach what — needs the `admin` verb |
-| `ask_rag`, `list_changes`, `list_workspaces`, `ping` | | |
+| `ask_nexo`, `ask_rag`, `list_changes`, `list_workspaces`, `ping` | | |
 
 `tools/list` is authoritative and per-principal: a tool you cannot use is not
 shown. Tools named `<provider>__<capability>__<tool>` run in an external
@@ -108,7 +114,10 @@ response; the text came back from `list_changes({ node_id })`'s
 before-snapshots. Metadata patches (`title`, `status`, `tag_ids`) touch no
 prose and need no timestamp. To flip one checkbox use
 `nodes_write({ op: "toggle_checklist_item" })` — one call, no
-read-modify-write.
+read-modify-write. To add a section use `nodes_write({ op: "append",
+heading, body_md })`, and to rewrite one section `op: "replace_block"`
+with its `block_id`: two agents editing different blocks both land, and a
+409 only means the *same* block changed under you.
 
 ## Archive what is finished or abandoned
 
