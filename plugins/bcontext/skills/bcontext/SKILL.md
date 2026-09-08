@@ -110,6 +110,16 @@ prose and need no timestamp. To flip one checkbox use
 `nodes_write({ op: "toggle_checklist_item" })` — one call, no
 read-modify-write.
 
+## Archive what is finished or abandoned
+
+`status: "archived"` is cleanup, not deletion: the task leaves every view,
+board, graph and `nodes({ op: "list" })` — but stays readable by id
+(`nodes({ op: "get" })`), linked, cited and searchable, and any other status
+brings it back. Tasks are created for a piece of work and then just exist;
+archive them once the work is done or dropped so live views stay about live
+work. `nodes({ op: "list", status: "archived" })` (or `include_archived:
+true`) shows the shelf; an archived blocker no longer blocks.
+
 ## A task is one node; its steps are subtasks
 
 Do not split one piece of work into `phase 1 / phase 2 / phase 3` task nodes.
