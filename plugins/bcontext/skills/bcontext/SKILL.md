@@ -1,6 +1,6 @@
 ---
 name: bcontext
-description: How to work a Bcontext workspace as an agent — the 17-tool surface (nodes/nodes_write, tags/tags_write, views/views_write, links_write, ingest/ingest_write, skills/skills_run, admin/admin_write, ask_rag, list_changes, list_workspaces, ping), H2 blocks, the if_updated_at rule, typed dependencies, cited retrieval, working alongside other agents, and what to write down. Use whenever reading from or writing to a Bcontext workspace (bcontext.dev or self-hosted) via the mcp__bcontext__* tools.
+description: How to work a Bcontext workspace as an agent — the 19-tool surface (nodes/nodes_write, subtasks/subtasks_write, tags/tags_write, views/views_write, links_write, ingest/ingest_write, skills/skills_run, admin/admin_write, ask_rag, list_changes, list_workspaces, ping), H2 blocks, subtasks inside a task, the if_updated_at rule, typed dependencies, cited retrieval, working alongside other agents, and what to write down. Use whenever reading from or writing to a Bcontext workspace (bcontext.dev or self-hosted) via the mcp__bcontext__* tools.
 ---
 
 # Working with Bcontext
@@ -36,6 +36,7 @@ Reads never mutate; `*_write` tools do. Pick the operation with `op`:
 | Read | Write | What it is |
 |---|---|---|
 | `nodes` (get · list · search) | `nodes_write` (create · update · delete · set_node_tags · toggle_checklist_item · attach_file) | the knowledge itself |
+| `subtasks` (list · get) | `subtasks_write` (add · update · delete · toggle · reorder) | the steps inside one task, edited by id |
 | `tags` (list) | `tags_write` (create · rename · merge · delete · link · unlink) | the taxonomy — needs the `tags:*` verbs, which an admin grants |
 | `views` (list · get · resolve · query) | `views_write` (create · duplicate · update · delete) | saved query lenses |
 | — | `links_write` (link · unlink) | typed edges between nodes |
@@ -101,6 +102,38 @@ before-snapshots. Metadata patches (`title`, `status`, `tag_ids`) touch no
 prose and need no timestamp. To flip one checkbox use
 `nodes_write({ op: "toggle_checklist_item" })` — one call, no
 read-modify-write.
+
+## A task is one node; its steps are subtasks
+
+Do not split one piece of work into `phase 1 / phase 2 / phase 3` task nodes.
+The graph is for meaningful units — a task someone can pick up, block on, or
+finish — and five half-tasks give every reader five reads and every planner
+five statuses to reconcile. The steps to finish a task are its **subtasks**:
+they live on the task (`data.subtasks`), never in the graph, and one
+`nodes({ op: "get" })` returns the task with all of them, in full.
+
+- **Create them with the task**, in the same call:
+  `nodes_write({ op: "create", kind: "task", title, content_md, subtasks: [
+  { title, summary, content_md }, … ] })`. Each subtask has a `title`, a
+  one-line `summary` (what the card shows — you write it, with the context
+  you have now; the server never generates one) and a full `content_md`
+  (what opening the card shows). Order is the array order.
+- **Edit one step, not the task.** `subtasks_write({ op, node_id, … })`:
+  `add` (title, summary, content_md, optional `position`), `update` (`id`,
+  `patch`), `delete` (`id`), `toggle` (`id`, optional `done` — omit to flip),
+  `reorder` (`ids` = the full order, or `id` + `position`). Every op costs
+  one small call and never touches the task's body or `updated_at` guard
+  logic on your side: omit `if_updated_at` and a lost race is retried for
+  you; pass it and a mismatch is a 409.
+- **Read cheaply.** `subtasks({ op: "list", node_id })` returns cards
+  (id, title, summary, done) and progress; `subtasks({ op: "get", node_id,
+  id })` returns one with its `content_md`. Ids are short (`s3kd9a2`) so
+  that addressing a step costs fewer tokens than describing it.
+- **Mark progress as you go.** Toggling a subtask is how humans on the board
+  and other agents see where the task is; the task's own `status` moves to
+  `done` when the last step does — that part is still yours to set.
+- Subtasks are for `task` and `bug` nodes. A doc's checklist stays a
+  `- [ ]` list in its body (`toggle_checklist_item`).
 
 ## Views are for the team
 
