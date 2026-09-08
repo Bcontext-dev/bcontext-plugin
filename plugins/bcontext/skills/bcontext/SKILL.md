@@ -118,7 +118,8 @@ board, graph and `nodes({ op: "list" })` — but stays readable by id
 brings it back. Tasks are created for a piece of work and then just exist;
 archive them once the work is done or dropped so live views stay about live
 work. `nodes({ op: "list", status: "archived" })` (or `include_archived:
-true`) shows the shelf; an archived blocker no longer blocks.
+true`) shows the shelf; an archived blocker no longer blocks. A task left in
+`done` for 30 days without changes is archived automatically.
 
 ## A task is one node; its steps are subtasks
 
