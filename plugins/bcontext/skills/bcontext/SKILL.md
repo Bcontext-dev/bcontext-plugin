@@ -58,6 +58,13 @@ remember: `create` takes fields flat; `update` nests them under `patch`.
 
 ## Write so that others can read
 
+- **Titles are names, not codes.** `Worker propio con pg-boss`, not
+  `F01 — Worker propio con pg-boss`; `Realtime propio: fuera Supabase
+  Realtime`, not `F05 — …`. No numbering or prefix (`NEXO-03`, `P4-05`,
+  `1.`), no ` — ` separators. A code means something to the session that
+  wrote it and nothing to the next reader, and it goes stale the first time
+  the plan is reordered; the id is the reference. Same for subtask titles.
+  A write with a coded title still lands but answers with `title_hint`.
 - **Structure every body with `##` headings.** Each H2 is an addressable block
   (`/n/<id>#<slug>`) other agents can cite and extend. A body without H2s is a
   wall nobody can point into.
