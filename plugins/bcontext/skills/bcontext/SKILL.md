@@ -1,6 +1,6 @@
 ---
 name: bcontext
-description: How to work a Bcontext workspace as an agent — the 24-tool surface (brief, nodes/nodes_write, subtasks/subtasks_write, tags/tags_write, views/views_write, links_write, ingest/ingest_write, skills/skills_write/skills_run, capabilities/capabilities_write, admin/admin_write, ask_nexo, ask_rag, list_changes, list_workspaces, ping), H2 blocks, subtasks inside a task, the if_updated_at rule, typed dependencies, cited retrieval, working alongside other agents, and what to write down. Use whenever reading from or writing to a Bcontext workspace (bcontext.dev or self-hosted) via the mcp__bcontext__* tools.
+description: How to work a Bcontext workspace as an agent — the 26-tool surface (brief, nodes/nodes_write, subtasks/subtasks_write, goals/goals_write, tags/tags_write, views/views_write, links_write, ingest/ingest_write, skills/skills_write/skills_run, capabilities/capabilities_write, admin/admin_write, ask_nexo, ask_rag, list_changes, list_workspaces, ping), H2 blocks, subtasks inside a task, the if_updated_at rule, typed dependencies, cited retrieval, working alongside other agents, and what to write down. Use whenever reading from or writing to a Bcontext workspace (bcontext.dev or self-hosted) via the mcp__bcontext__* tools.
 ---
 
 # Working with Bcontext
@@ -42,6 +42,7 @@ Reads never mutate; `*_write` tools do. Pick the operation with `op`:
 | `brief` | — | the session opener: what is going on, what is yours, what changed |
 | `nodes` (get · list · search) | `nodes_write` (create · update · append · replace_block · delete · set_node_tags · toggle_checklist_item · attach_file) | the knowledge itself |
 | `subtasks` (list · get) | `subtasks_write` (add · update · delete · toggle · reorder) | the steps inside one task, edited by id |
+| `goals` | `goals_write` (checkin · create · update · add_kr · update_kr · remove_kr) | what the workspace is aiming at, and how each objective is doing |
 | `tags` (list) | `tags_write` (create · rename · merge · delete · link · unlink) | the taxonomy — needs the `tags:*` verbs, which an admin grants |
 | `views` (list · get · resolve · query) | `views_write` (create · duplicate · update · delete) | saved query lenses |
 | — | `links_write` (link · unlink) | typed edges between nodes |
@@ -199,6 +200,43 @@ hit carries a paste-ready `ref` (`/n/<id>#<block>`); follow it with
 starting together are told apart by the shape of what they wrote until a
 second id appears. Write your role and intent into `## Status` sections; it
 is what the next reader will use.
+
+## Goals: what the workspace is aiming at
+
+A `goal` node is an objective, and the workspace has three levels of them.
+The **North Star** is one per workspace, holds the mission, cannot be
+deleted, and never expires. Under it hang **company goals**; under those,
+**project goals**. `goals` returns that tree with each objective's status,
+progress and pace; read it when you need to know whether the task in front
+of you is worth doing at all.
+
+**Scope is decided once, when the goal is created, and then it is a fact.**
+A goal created with no parent and nothing it contributes to is a company
+goal, parented to the North Star. Tagging it later does not demote it —
+tags say what a node is about, never how important it is. Creating or
+editing a company goal or the North Star needs the `goals:write` verb,
+which an admin grants; project goals go under the ordinary `write`.
+
+**Goal statuses are a different vocabulary** — `on_track`, `at_risk`,
+`off_track`, `achieved`, `missed`, `abandoned`. An objective does not move
+backlog → done, and it never earns a column on the task board.
+
+**Report progress with `goals_write({ op: "checkin" })`.** It moves one key
+result and stamps the review in a single call: no body rewrite, no
+`if_updated_at`, no lost-update race with whoever else is in that node.
+Reaching for `nodes_write` to edit `data.key_results` by hand is the wrong
+tool and will eventually clobber someone.
+
+**`contributes_to` is how work reaches an objective**, and unlike
+`parent_id` it admits several targets — one task can genuinely push
+retention and infra cost at once. Link it (`links_write({ from_id: TASK,
+to_id: GOAL, relation: "contributes_to" })`) instead of writing "this is
+for the Q1 goal" in prose: the edge is what puts the task in front of the
+next agent, and the sentence is not.
+
+**Write the horizon however you have it.** A cycle (`"2027-Q1"`) or two
+dates — both are stored as a range, because a cycle *is* a range. The end
+lives in the node's `due_date`.
 
 ## Credentials: one node, one credential — and you will never see the value
 
