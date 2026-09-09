@@ -1,6 +1,6 @@
 {
   "name": "bcontext",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Bcontext workspace integration: MCP server registration, the agent skill for the 24-tool surface (brief, blocks, subtasks, ask_nexo, skills, capabilities, if_updated_at, typed dependencies, cited retrieval, working alongside other agents), and a daily-brief command.",
   "author": {
     "name": "Bcontext",

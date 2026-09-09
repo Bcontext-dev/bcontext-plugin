@@ -200,6 +200,50 @@ starting together are told apart by the shape of what they wrote until a
 second id appears. Write your role and intent into `## Status` sections; it
 is what the next reader will use.
 
+## Credentials: one node, one credential — and you will never see the value
+
+A `credential` node holds exactly one credential. Two platforms are two
+nodes; the same platform in dev and in prod is two nodes, told apart by
+`environment`; two keys for the same platform and environment are two nodes,
+told apart by their title. A node that holds six platforms' secrets cannot be
+rotated, shared or referenced, and turns "we leaked the Stripe key" into "we
+leaked everything".
+
+Write one like this — never a secret in `content_md`, never in a title:
+
+```json
+{ "op": "update", "id": "<node>", "patch": { "data": {
+  "credential": { "schema_version": 1, "type": "api_key", "environment": "prod", "service": "Stripe" },
+  "fields": [{ "key": "api_key", "name": "API key", "value": "…", "secret": true }] } } }
+```
+
+`type` is one of `api_key`, `api_key_pair` (public + secret), `basic_auth`,
+`bearer_token`, `oauth2_client`, `cloud_keys`, `database`, `ssh_key`,
+`service_account`, `webhook` — or `custom`, which is the edge case, not the
+default. `environment` is `local`, `dev`, `staging` or `prod`. Tags classify
+them like any other node.
+
+Reading one gives you its shape — type, environment, which fields exist,
+which are secret, and each field's `bx://credential/<node>#<field>` reference
+— with every value `[redacted]`, and credentials never appear in search or
+retrieval. That is not distrust: everything you read is written to your
+client's transcript, replayed to the model provider on every later turn, and
+often summarised into a log, so a secret you read is a secret copied where
+nobody rotates it.
+
+To USE one, follow the `credential_use` recipe on the node: materialise the
+value inside the command that consumes it and never print it.
+
+```bash
+STRIPE_SECRET_KEY=$(curl -sS -H "Authorization: Bearer $BCONTEXT_MCP_TOKEN" \
+  "$BCONTEXT_API/api/credentials/<node>/materialize?workspace=<ws>&field=secret_key") \
+  node scripts/charge.js
+```
+
+Needs the `credentials:use` scope, which `admin:*` does not grant. Never
+echo, cat or paste a materialised value, and never copy one into a node, a
+commit, a PR or a message.
+
 ## What to leave out
 
 Raw JSON you paged through to reconstruct a timeline, and observations about
