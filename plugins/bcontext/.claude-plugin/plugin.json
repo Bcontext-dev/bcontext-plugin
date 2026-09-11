@@ -1,7 +1,7 @@
 {
   "name": "bcontext",
-  "version": "0.4.0",
-  "description": "Bcontext workspace integration: MCP server registration, the agent skill for the 24-tool surface (brief, blocks, subtasks, ask_nexo, skills, capabilities, if_updated_at, typed dependencies, cited retrieval, working alongside other agents), and a daily-brief command.",
+  "version": "0.4.1",
+  "description": "Bcontext workspace integration: MCP server registration, the agent skill for the 28-tool surface (brief, blocks, subtasks, goals, datasets, ask_nexo, skills, capabilities, if_updated_at, typed dependencies, cited retrieval, working alongside other agents), and a daily-brief command.",
   "author": {
     "name": "Bcontext",
     "email": "founders@bcontext.es"
