@@ -8,7 +8,7 @@
     {
       "name": "bcontext",
       "source": "./plugins/bcontext",
-      "description": "Work a Bcontext workspace like a native: MCP server, reusable tags, semantic hierarchy, CLI-first conventions, cited retrieval, optimistic concurrency, and the /bcontext:brief standup command."
+      "description": "Work a Bcontext workspace like a native: MCP server registration, the agent conventions skill (brief, H2 blocks, subtasks, goals, typed dependencies, cited retrieval, the if_updated_at rule) and the /bcontext:brief standup command."
     }
   ]
 }

@@ -1,6 +1,6 @@
 ---
 name: bcontext
-description: How to work a Bcontext workspace as an agent — the 26-tool surface (brief, nodes/nodes_write, subtasks/subtasks_write, goals/goals_write, tags/tags_write, views/views_write, links_write, ingest/ingest_write, skills/skills_write/skills_run, capabilities/capabilities_write, admin/admin_write, ask_nexo, ask_rag, list_changes, list_workspaces, ping), H2 blocks, subtasks inside a task, the if_updated_at rule, typed dependencies, cited retrieval, working alongside other agents, and what to write down. Use whenever reading from or writing to a Bcontext workspace (bcontext.dev or self-hosted) via the mcp__bcontext__* tools.
+description: How to work a Bcontext workspace as an agent — the 28-tool surface (brief, nodes/nodes_write, subtasks/subtasks_write, goals/goals_write, data/data_write, tags/tags_write, views/views_write, links_write, ingest/ingest_write, skills/skills_write/skills_run, capabilities/capabilities_write, admin/admin_write, ask_nexo, ask_rag, list_changes, list_workspaces, ping), H2 blocks, subtasks inside a task, the if_updated_at rule, typed dependencies, cited retrieval, working alongside other agents, and what to write down. Use whenever reading from or writing to a Bcontext workspace (bcontext.dev or self-hosted) via the mcp__bcontext__* tools.
 ---
 
 # Working with Bcontext
@@ -43,6 +43,7 @@ Reads never mutate; `*_write` tools do. Pick the operation with `op`:
 | `nodes` (get · list · search) | `nodes_write` (create · update · append · replace_block · delete · set_node_tags · toggle_checklist_item · attach_file) | the knowledge itself |
 | `subtasks` (list · get) | `subtasks_write` (add · update · delete · toggle · reorder) | the steps inside one task, edited by id |
 | `goals` | `goals_write` (checkin · create · update · add_kr · update_kr · remove_kr) | what the workspace is aiming at, and how each objective is doing |
+| `data` (schema · sample · query) | `data_write` (create · append_rows · replace_rows) | datasets (kind `data`): rows live in their own table, queried server-side |
 | `tags` (list) | `tags_write` (create · rename · merge · delete · link · unlink) | the taxonomy — needs the `tags:*` verbs, which an admin grants |
 | `views` (list · get · resolve · query) | `views_write` (create · duplicate · update · delete) | saved query lenses |
 | — | `links_write` (link · unlink) | typed edges between nodes |
