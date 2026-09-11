@@ -239,6 +239,15 @@ next agent, and the sentence is not.
 dates — both are stored as a range, because a cycle *is* a range. The end
 lives in the node's `due_date`.
 
+**The Roadmap is the goals seen as a grid**, and `views({ op: "resolve" })`
+on the system `roadmap` view returns it computed: goals as rows in tree
+order, `now` / `next` / `later` as columns, and the tasks that
+`contributes_to` each goal as cards, each with the reason it sits where it
+sits (status, priority, open blockers). The column is a rule, not a field:
+to move a card, change the node — its status, its priority, its edges —
+never the view. A task in the `unassigned` row is one nobody linked to an
+objective; if you know which goal it serves, that link is worth adding.
+
 ## Credentials: one node, one credential — and you will never see the value
 
 A `credential` node holds exactly one credential. Two platforms are two
