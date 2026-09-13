@@ -1,6 +1,6 @@
 ---
 name: bcontext
-description: How to work a Bcontext workspace as an agent — the 28-tool surface (brief, nodes/nodes_write, subtasks/subtasks_write, goals/goals_write, data/data_write, tags/tags_write, views/views_write, links_write, ingest/ingest_write, skills/skills_write/skills_run, capabilities/capabilities_write, admin/admin_write, ask_nexo, ask_rag, list_changes, list_workspaces, ping), H2 blocks, subtasks inside a task, the if_updated_at rule, typed dependencies, cited retrieval, working alongside other agents, and what to write down. Use whenever reading from or writing to a Bcontext workspace (bcontext.dev or self-hosted) via the mcp__bcontext__* tools.
+description: How to work a Bcontext workspace as an agent — the 28 native tools (brief, nodes/nodes_write, subtasks/subtasks_write, goals/goals_write, data/data_write, tags/tags_write, views/views_write, links_write, ingest/ingest_write, skills/skills_write/skills_run, capabilities/capabilities_write, admin/admin_write, ask_nexo, ask_rag, list_changes, list_workspaces, ping) plus capability_search/capability_call for external tools and skills, H2 blocks, subtasks inside a task, the if_updated_at rule, typed dependencies, cited retrieval, working alongside other agents, and what to write down. Use whenever reading from or writing to a Bcontext workspace (bcontext.dev or self-hosted) via the mcp__bcontext__* tools.
 ---
 
 # Working with Bcontext
@@ -19,8 +19,9 @@ work through this surface, and it is ordered by how much it saved them.
    `X-Bcontext-Workspace` (or `?workspace=`).
 3. **`brief({})`** — one read-only call: counts, the unblocked queue by
    priority, open decisions, what is assigned to you, what changed since your
-   previous brief (remembered per token) and the workspace's views. Start
-   here; it replaces the first four or five calls of a cold session.
+   previous brief (remembered per token), the workspace's views and how many
+   external tools and skills you could search for. Start here; it replaces
+   the first four or five calls of a cold session.
 4. **`list_changes({ since })`** when you need the detail of what happened.
    Keep the newest `ts` as your next `since`; do not re-read the tree.
 5. **`nodes({ op: "list", kind: "task", unblocked: true })`** — what can be
@@ -49,14 +50,25 @@ Reads never mutate; `*_write` tools do. Pick the operation with `op`:
 | — | `links_write` (link · unlink) | typed edges between nodes |
 | `ingest` | `ingest_write` | connector candidates awaiting review |
 | `skills` (list · get) | `skills_write` (import) · `skills_run` | skills as YOUR instructions (get renders the prompt, scopes and tools); run is for model-less automations |
-| `capabilities` (list · discover · status) | `capabilities_write` (connect · disconnect · grant · revoke) | other MCPs and external tools behind the gateway — admin verb |
+| `capabilities` (list · discover · status) | `capabilities_write` (connect · disconnect · grant · revoke) | connecting other MCPs and webhooks, and granting their tools — admin verb |
+| `capability_search` | `capability_call` (ref · args) | the external tools you were granted and the workspace's skills, found by search and called by ref |
 | `admin` (access · preview · held_invitations) | `admin_write` (grant · revoke · invite · release_invite) | who can reach what — needs the `admin` verb |
 | `ask_nexo`, `ask_rag`, `list_changes`, `list_workspaces`, `ping` | | |
 
 `tools/list` is authoritative and per-principal: a tool you cannot use is not
-shown. Tools named `<provider>__<capability>__<tool>` run in an external
-provider through Bcontext's gateway, re-authorised on every call; treat them
-as open-world actions and never retry one unless the error says to.
+shown. External tools (connected MCP servers, webhooks, workflows) and the
+workspace's skills are **never** in that list, so it does not change when
+someone grants you something: `capability_search({ query })` ranks what you
+may call and returns stable refs — `<provider>/<capability>/<tool>` for an
+external tool, `skill/<slug>` for a skill — with `input_schema` inline when
+there are three hits or fewer or the query is an exact ref (otherwise search
+again by ref). `capability_call({ ref, args })` runs it: an external ref is
+re-authorised on every call and goes through Bcontext's gateway — treat it
+as an open-world action and never retry one unless the error says to; a
+`skill/…` ref runs the skill server-side, like `skills_run` (to run a skill
+with your own model, `skills({ op: "get" })` is still the way). What an
+external tool returned can be saved as a node with `provenance: {
+capability, tool, invocation_id }` from the result's `_meta.bcontext_gateway`.
 
 **Learn the schemas from the errors.** Every write tool is a discriminated
 union on `op`; calling `nodes_write({ op: "create" })` with nothing else
