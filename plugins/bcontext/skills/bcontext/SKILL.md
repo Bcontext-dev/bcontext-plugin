@@ -27,7 +27,11 @@ work through this surface, and it is ordered by how much it saved them.
 5. **`nodes({ op: "list", kind: "task", unblocked: true })`** — what can be
    started now (the same rule a saved view with `unblocked: true` applies).
    Archived nodes stay out unless you ask for them.
-6. **`tags({})`** before you assign any `tag_ids`. There is no get-or-create.
+6. **`tags({})`** before you assign any `tag_ids`. There is no get-or-create:
+   if the tag you need is missing, `tags_write({ op: "create" })` it — with
+   `parent_ids` when it belongs under an existing one — and then assign it.
+   The taxonomy is yours to shape as a writer (create, describe, relate);
+   only merging and deleting tags are an admin's.
 7. **`ask_nexo({ question })`** for "what do we already know about X": a cited
    answer with confidence, freshness (stale / superseded), open conflicts,
    knowledge gaps and suggested actions; `mode: "auto"` goes deep on why /
@@ -45,7 +49,7 @@ Reads never mutate; `*_write` tools do. Pick the operation with `op`:
 | `subtasks` (list · get) | `subtasks_write` (add · update · delete · toggle · reorder) | the steps inside one task, edited by id |
 | `goals` | `goals_write` (checkin · create · update · add_kr · update_kr · remove_kr) | what the workspace is aiming at, and how each objective is doing |
 | `data` (schema · sample · query) | `data_write` (create · append_rows · replace_rows) | datasets (kind `data`): rows live in their own table, queried server-side |
-| `tags` (list) | `tags_write` (create · rename · merge · delete · link · unlink) | the taxonomy — needs the `tags:*` verbs, which an admin grants |
+| `tags` (list) | `tags_write` (create · update · link · unlink · merge · delete) | the taxonomy — create/update/link come with `write`; merge/delete need `tags:delete` (admin) |
 | `views` (list · get · resolve · query) | `views_write` (create · duplicate · update · delete) | saved query lenses |
 | — | `links_write` (link · unlink) | typed edges between nodes |
 | `ingest` | `ingest_write` | connector candidates awaiting review |
